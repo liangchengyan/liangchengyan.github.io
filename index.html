@@ -66,6 +66,62 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-redis集群存储session" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/04/04/redis集群存储session/" class="article-date">
+  <time datetime="2019-04-04T12:03:49.000Z" itemprop="datePublished">2019-04-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/04/redis集群存储session/">redis集群存储session</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在开发项目的过程中，对于用户登录信息的存储校验，用到的有cookie和session两种，其中最直观的区别便是cookie存储在客户端和浏览器端，而session存储在服务端；session存储有着安全、高效、不依赖浏览器环境的特点。 </p>
+<p>在某个实际的springboot项目中，便是采用的session存储；但由于项目实际部署在三台服务器上，而session存储在服务器端，因此用户可能需要登录三次；为了让用户仅需登录一次，项目采用redis来存储session；考虑到项目的商业化，未使用公司的redis服务，而是自己搭建了redis群。</p>
+<h2 id="springboot配置-application-yml"><a href="#springboot配置-application-yml" class="headerlink" title="springboot配置 - application.yml"></a>springboot配置 - application.yml</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">spring:</span><br><span class="line">  session:</span><br><span class="line">    store-type: redis</span><br><span class="line">  redis:</span><br><span class="line">    host: 主redis IP</span><br><span class="line">    port: 主redis端口号</span><br><span class="line">    password: redis所设密码</span><br><span class="line">    sentinel:</span><br><span class="line">      master: mymaster</span><br><span class="line">      nodes: 所设哨兵IP及端口号，用“,”分隔，eg: IP1:端口号1,IP2:端口号2</span><br></pre></td></tr></table></figure>
+<p><strong>ps: 在采用redis存储session时，需要将相关的类实现序列化接口，否则会报错:</strong>  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UserRole</span> <span class="keyword">implements</span> <span class="title">Serializable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="redis部署"><a href="#redis部署" class="headerlink" title="redis部署"></a>redis部署</h2><h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>本次共部署了三台redis服务器在三台机器上, 分别记为：IP1:6379 - 主redis、IP2:6379 - 从redis、IP3:6379 - 从redis  </p>
+<p>五个哨兵，分别为：IP1:26379, IP1:26380, IP2:26379, IP2:26380, IP3:26379  </p>
+<p>其余两台redis服务器的其中一台可以在主redis宕机时自动切换为主redis</p>
+<h3 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h3><h4 id="redis安装"><a href="#redis安装" class="headerlink" title="redis安装"></a>redis安装</h4><p>yum install epel-release<br>yum install redis</p>
+<h4 id="redis配置"><a href="#redis配置" class="headerlink" title="redis配置"></a>redis配置</h4><p>IP1: 主redis - /etc/redis.conf:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#bind 127.0.0.1</span><br><span class="line">port 6379</span><br><span class="line">protected-mode no #为了能够远程连接</span><br><span class="line">requirepass 所设密码</span><br><span class="line">masterauth 所设密码</span><br></pre></td></tr></table></figure>
+<p>IP2,IP3: 从redis - /etc/redis.conf:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#bind 127.0.0.1</span><br><span class="line">port 6379</span><br><span class="line">protected-mode no #为了能够远程连接</span><br><span class="line">slaveof IP1 6379 #主redisIP地址及端口号</span><br><span class="line">requirepass 所设密码</span><br><span class="line">masterauth 所设密码</span><br></pre></td></tr></table></figure>
+<h4 id="redis哨兵配置"><a href="#redis哨兵配置" class="headerlink" title="redis哨兵配置"></a>redis哨兵配置</h4><h5 id="IP1机器"><a href="#IP1机器" class="headerlink" title="IP1机器:"></a>IP1机器:</h5><p>哨兵1: /etc/redis-sentinel.conf:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">port 26379</span><br><span class="line">sentinel monitor mymaster IP1 6379 2  #2表示至少需要2个哨兵同意才能启用从redis</span><br><span class="line">protected-mode no  #为了能够远程访问</span><br><span class="line">sentinel auth-pass mymaster 所设密码</span><br></pre></td></tr></table></figure>
+<p>哨兵2: 复制redis-sentinel.conf文件，命名为redis-sentinel2.conf:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">port 26380</span><br><span class="line">sentinel monitor mymaster IP1 6379 2  #2表示至少需要2个哨兵同意才能启用从redis</span><br><span class="line">protected-mode no  #为了能够远程访问</span><br><span class="line">sentinel auth-pass mymaster 所设密码</span><br></pre></td></tr></table></figure>
+<h5 id="IP2、IP3机器哨兵配置方式同IP1"><a href="#IP2、IP3机器哨兵配置方式同IP1" class="headerlink" title="IP2、IP3机器哨兵配置方式同IP1"></a>IP2、IP3机器哨兵配置方式同IP1</h5><h4 id="redis启动"><a href="#redis启动" class="headerlink" title="redis启动"></a>redis启动</h4><p>redis-server redis.conf</p>
+<h4 id="redis哨兵启动"><a href="#redis哨兵启动" class="headerlink" title="redis哨兵启动"></a>redis哨兵启动</h4><p>redis-sentinel redis-sentinel.conf<br>redis-sentinel redis-sentinel2.conf</p>
+<h4 id="查看redis哨兵部署情况"><a href="#查看redis哨兵部署情况" class="headerlink" title="查看redis哨兵部署情况"></a>查看redis哨兵部署情况</h4><p>redis-cli -p 26379 进入哨兵端口<br>sentinel master mymaster 查看master情况<br>sentinel sentinels mymaster 查看其他哨兵信息</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/04/04/redis集群存储session/" data-id="cjub7srfw00000i1rtoh5tnk4" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-带logo二维码图片生成" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/04/02/带logo二维码图片生成/" class="article-date">
@@ -95,7 +151,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/02/带logo二维码图片生成/" data-id="cjtzxqh5f0000yifykl9qvs8m" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/04/02/带logo二维码图片生成/" data-id="cjub7srgj00010i1ryvgckj17" class="article-share-link">Share</a>
       
       
     </footer>
@@ -134,6 +190,10 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2019/04/04/redis集群存储session/">redis集群存储session</a>
+          </li>
         
           <li>
             <a href="/2019/04/02/带logo二维码图片生成/">带logo二维码图片生成</a>
