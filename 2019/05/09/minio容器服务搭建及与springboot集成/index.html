@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+
+  
+  <title>minio容器服务搭建及与springboot集成 | 梁成琰</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="前言minio是一个基于Apache License v2.0开源协议的对象存储服务。它兼容亚马逊S3云存储服务接口，非常适合于存储大容量非结构化的数据，例如图片、视频、日志文件、备份数据和容器/虚拟机镜像等，而一个对象文件可以是任意大小，从几kb到最大5T不等。minio是一个非常轻量的服务，可以很简单的和其他应用结合，类似mysql、redis。   minio官方文档: https://do">
+<meta property="og:type" content="article">
+<meta property="og:title" content="minio容器服务搭建及与springboot集成">
+<meta property="og:url" content="http://yoursite.com/2019/05/09/minio容器服务搭建及与springboot集成/index.html">
+<meta property="og:site_name" content="梁成琰">
+<meta property="og:description" content="前言minio是一个基于Apache License v2.0开源协议的对象存储服务。它兼容亚马逊S3云存储服务接口，非常适合于存储大容量非结构化的数据，例如图片、视频、日志文件、备份数据和容器/虚拟机镜像等，而一个对象文件可以是任意大小，从几kb到最大5T不等。minio是一个非常轻量的服务，可以很简单的和其他应用结合，类似mysql、redis。   minio官方文档: https://do">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-05-20T06:18:02.168Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="minio容器服务搭建及与springboot集成">
+<meta name="twitter:description" content="前言minio是一个基于Apache License v2.0开源协议的对象存储服务。它兼容亚马逊S3云存储服务接口，非常适合于存储大容量非结构化的数据，例如图片、视频、日志文件、备份数据和容器/虚拟机镜像等，而一个对象文件可以是任意大小，从几kb到最大5T不等。minio是一个非常轻量的服务，可以很简单的和其他应用结合，类似mysql、redis。   minio官方文档: https://do">
+  
+    <link rel="alternate" href="/atom.xml" title="梁成琰" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">梁成琰</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">个人博客</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-minio容器服务搭建及与springboot集成" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/09/minio容器服务搭建及与springboot集成/" class="article-date">
+  <time datetime="2019-05-09T11:32:51.000Z" itemprop="datePublished">2019-05-09</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      minio容器服务搭建及与springboot集成
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>minio是一个基于Apache License v2.0开源协议的对象存储服务。它兼容亚马逊S3云存储服务接口，非常适合于存储大容量非结构化的数据，例如图片、视频、日志文件、备份数据和容器/虚拟机镜像等，而一个对象文件可以是任意大小，从几kb到最大5T不等。minio是一个非常轻量的服务，可以很简单的和其他应用结合，类似mysql、redis。  </p>
+<p><a href="https://docs.min.io/cn/" target="_blank" rel="noopener">minio官方文档</a>: <a href="https://docs.min.io/cn/" target="_blank" rel="noopener">https://docs.min.io/cn/</a></p>
+<h3 id="minio服务搭建-Linux"><a href="#minio服务搭建-Linux" class="headerlink" title="minio服务搭建 - Linux"></a>minio服务搭建 - Linux</h3><h4 id="minio服务器安装并启动"><a href="#minio服务器安装并启动" class="headerlink" title="minio服务器安装并启动"></a>minio服务器安装并启动</h4><p><a href="https://dl.min.io/server/minio/release/linux-amd64/minio" target="_blank" rel="noopener">地址</a>: <a href="https://dl.min.io/server/minio/release/linux-amd64/minio" target="_blank" rel="noopener">https://dl.min.io/server/minio/release/linux-amd64/minio</a>  </p>
+<h5 id="操作步骤："><a href="#操作步骤：" class="headerlink" title="操作步骤："></a>操作步骤：</h5><ol>
+<li>wget <a href="https://dl.min.io/server/minio/release/linux-amd64/minio" target="_blank" rel="noopener">https://dl.min.io/server/minio/release/linux-amd64/minio</a></li>
+<li>chmod +x minio</li>
+<li>./minio server /data  </li>
+</ol>
+<h4 id="minio客户端安装"><a href="#minio客户端安装" class="headerlink" title="minio客户端安装"></a>minio客户端安装</h4><p><a href="https://dl.min.io/client/mc/release/linux-amd64/mc" target="_blank" rel="noopener">地址</a>: <a href="https://dl.min.io/client/mc/release/linux-amd64/mc" target="_blank" rel="noopener">https://dl.min.io/client/mc/release/linux-amd64/mc</a>  </p>
+<h5 id="操作步骤：-1"><a href="#操作步骤：-1" class="headerlink" title="操作步骤："></a>操作步骤：</h5><ol>
+<li>wget <a href="https://dl.min.io/client/mc/release/linux-amd64/mc" target="_blank" rel="noopener">https://dl.min.io/client/mc/release/linux-amd64/mc</a></li>
+<li>chmod +x mc</li>
+<li>./mc –help</li>
+</ol>
+<h4 id="在minio客户端添加一个云存储服务"><a href="#在minio客户端添加一个云存储服务" class="headerlink" title="在minio客户端添加一个云存储服务"></a>在minio客户端添加一个云存储服务</h4><p>./mc config host add minio服务器别名 minion服务器url:port minio服务器accesskey minio服务器secretKey S3v2</p>
+<h4 id="minio设置永久下载链接"><a href="#minio设置永久下载链接" class="headerlink" title="minio设置永久下载链接"></a>minio设置永久下载链接</h4><p>在实际操作中，发现使用minio的分享文件功能，最多支持分享7天，对于“需要根据有规律的url来直接访问文件”这一需求显然不满足。对于“需要设置永久下载链接并根据url直接访问”这一要求，需：  </p>
+<h5 id="配置如下："><a href="#配置如下：" class="headerlink" title="配置如下："></a>配置如下：</h5><ol>
+<li>在minio客户端添加一个云存储服务</li>
+<li>设置开放管理： ./mc policy public minio服务器别名/bucket名  </li>
+</ol>
+<h5 id="url访问"><a href="#url访问" class="headerlink" title="url访问"></a>url访问</h5><p>此时便将server端的bucket桶设置为开放管理，可直接通过url访问及下载<br>URL类似于：服务IP:port/bucket名/文件名</p>
+<h3 id="minio与springboot集成"><a href="#minio与springboot集成" class="headerlink" title="minio与springboot集成"></a>minio与springboot集成</h3><h4 id="pom-xml依赖添加"><a href="#pom-xml依赖添加" class="headerlink" title="pom.xml依赖添加"></a>pom.xml依赖添加</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">minio.version</span>&gt;</span>6.0.0<span class="tag">&lt;/<span class="name">minio.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!--对象存储容器minio依赖--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>io.minio<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>minio<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;minio.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h4 id="minio容器API开发"><a href="#minio容器API开发" class="headerlink" title="minio容器API开发"></a>minio容器API开发</h4><p><a href="https://docs.min.io/cn/java-client-api-reference.html" target="_blank" rel="noopener">minio官方Java api文档</a>: <a href="https://docs.min.io/cn/java-client-api-reference.html" target="_blank" rel="noopener">https://docs.min.io/cn/java-client-api-reference.html</a>  </p>
+<p>MinioUtil.java  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf</span>4j</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MinioUtil</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String MINIO_URL = <span class="string">"xxx"</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String ACCESS_KEY = <span class="string">"xxx"</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String SECRET_KEY = <span class="string">"xxx"</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String BUCKET_NAME = <span class="string">"xxx"</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> MinioClient minioClient;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">static</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      minioClient = <span class="keyword">new</span> MinioClient(MINIO_URL, ACCESS_KEY, SECRET_KEY);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      log.error(<span class="string">"初始化MinioClient失败"</span>, e);</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"初始化MinioClient失败"</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">boolean</span> found = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      found = minioClient.bucketExists(BUCKET_NAME);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      log.error(<span class="string">"查询bucket失败"</span>, e);</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"查询bucket失败"</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!found) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        minioClient.makeBucket(BUCKET_NAME);</span><br><span class="line">      &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        log.error(<span class="string">"初始化bucket失败"</span>, e);</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"初始化bucket失败"</span>, e);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 上传文件到服务器并返回URL</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">uploadFileToMinio</span><span class="params">(MultipartFile file)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    String fileName = file.getOriginalFilename();</span><br><span class="line">    String url = MINIO_URL + <span class="string">"/"</span> + BUCKET_NAME + <span class="string">"/"</span> + fileName;</span><br><span class="line">    <span class="comment">//获取文件的MIME值</span></span><br><span class="line">    String fileContentType = <span class="string">"application/octet-stream"</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      fileContentType = file.getContentType();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      log.error(<span class="string">"获取文件MIME值失败"</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">    minioClient.putObject(BUCKET_NAME, fileName, file.getInputStream(), (<span class="keyword">long</span>) file.getInputStream().available(), fileContentType);</span><br><span class="line">    <span class="keyword">return</span> url;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 从minio容器删除单个文件</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> fileName 文件名称</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> 删除结果</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Boolean <span class="title">deleteFileFromMinio</span><span class="params">(String fileName)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//执行删除操作</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      minioClient.removeObject(BUCKET_NAME, fileName);</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      log.error(<span class="string">"从minio删除文件失败"</span>,e);</span><br><span class="line">      log.error(<span class="string">"删除失败文件名称: &#123;&#125;"</span>,fileName);</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * 从minio容器删除文件列表</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@param</span> fileNameList 文件名称列表</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@return</span> 删除失败的文件名称</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;String&gt; <span class="title">deleteFileFromMinio</span><span class="params">(List&lt;String&gt; fileNameList)</span> </span>&#123;</span><br><span class="line">    Iterable&lt;Result&lt;DeleteError&gt;&gt; results = minioClient.removeObjects(BUCKET_NAME, fileNameList);</span><br><span class="line">    List&lt;String&gt; errorFileNameList = Lists.newArrayList();</span><br><span class="line">    results.forEach(error -&gt; &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        errorFileNameList.add(error.get().objectName());</span><br><span class="line">      &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        log.error(<span class="string">"获取minio删除文件失败信息失败"</span>,e);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> errorFileNameList;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/05/09/minio容器服务搭建及与springboot集成/" data-id="cjvvzde2400003u1regul0rva" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/04/16/activiti官方流程编辑器整合/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">activiti官方流程编辑器整合</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/05/09/minio容器服务搭建及与springboot集成/">minio容器服务搭建及与springboot集成</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/16/activiti官方流程编辑器整合/">activiti官方流程编辑器整合</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/04/redis集群存储session/">redis集群存储session</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/02/带logo二维码图片生成/">带logo二维码图片生成</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 chengyan.liang<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>
