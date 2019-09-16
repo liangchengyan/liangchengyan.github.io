@@ -66,6 +66,105 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-用jstack分析线程状态" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/09/11/用jstack分析线程状态/" class="article-date">
+  <time datetime="2019-09-11T11:28:07.000Z" itemprop="datePublished">2019-09-11</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/09/11/用jstack分析线程状态/">用jstack分析线程状态</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h3><p>在前几天有个spring项目的beta环境，开发同学在发了新的代码之后，测试同学发现项目运行的很卡顿，系统反应时间很长，开发同学在重启项目后依然不起作用。  </p>
+<p>于是便登录上了两台测试环境的Linux机器，使用Top命令查看系统的资源状态及进程的运行状态，发现两台机器的java进程对cpu的使用率达到了400%  </p>
+<p>此时已经确定的是新发布的代码有问题，但具体是java中的哪个线程造成了如此高的cup使用率？这时便需要jvm的相关命令了。</p>
+<h3 id="2、Linux系统top命令的应用"><a href="#2、Linux系统top命令的应用" class="headerlink" title="2、Linux系统top命令的应用"></a>2、Linux系统top命令的应用</h3><p>Linux top命令用于实时显示process的动态  </p>
+<p>使用权限：所有使用者  </p>
+<h4 id="2-1-语法："><a href="#2-1-语法：" class="headerlink" title="2.1 语法："></a>2.1 语法：</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">top [-] [d delay] [q] [c] [S] [s] [i] [n] [b]</span><br></pre></td></tr></table></figure>
+<h4 id="2-2-参数说明："><a href="#2-2-参数说明：" class="headerlink" title="2.2 参数说明："></a>2.2 参数说明：</h4><ul>
+<li>d: 改变显示的更新速度</li>
+<li>q: 没有任何延迟的显示速度</li>
+<li>c: 切换显示模式，共有两种模式：一是只显示执行档的名称，另一种是显示完整的路径与名称</li>
+<li>S: 累积模式</li>
+<li>s: 安全模式，将交谈指令取消，避免潜在的危机</li>
+<li>i: 忽略失效进程，不显示任何闲置或无用的进程</li>
+<li>n: 后跟数字，表示更新的次数，完成后将会退出top</li>
+<li>b: 批处理模式显示程序信息</li>
+</ul>
+<h4 id="2-3-交互命令："><a href="#2-3-交互命令：" class="headerlink" title="2.3 交互命令："></a>2.3 交互命令：</h4><h5 id="2-3-1-多核CUP监控"><a href="#2-3-1-多核CUP监控" class="headerlink" title="2.3.1 多核CUP监控"></a>2.3.1 多核CUP监控</h5><ul>
+<li>在top基本视图中，按下数字键“1”，可以监控每个CPU的状况:</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">top - 16:58:23 up 209 days, 22:04,  1 user,  load average: 0.00, 0.02, 0.05</span><br><span class="line">Tasks: 145 total,   2 running, 143 sleeping,   0 stopped,   0 zombie</span><br><span class="line">Cpu0  :  0.0%us,  0.3%sy,  0.0%ni, 99.7%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st</span><br><span class="line">Cpu1  :  0.3%us,  0.3%sy,  0.0%ni, 99.3%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st</span><br><span class="line">Cpu2  :  0.3%us,  0.3%sy,  0.0%ni, 99.3%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st</span><br><span class="line">Cpu3  :  0.3%us,  0.0%sy,  0.0%ni, 99.7%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st</span><br><span class="line">Mem:   4047924k total,  3783100k used,   264824k free,   279760k buffers</span><br><span class="line">Swap:  4194300k total,   702880k used,  3491420k free,   663564k cached</span><br><span class="line"></span><br><span class="line">  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND</span><br><span class="line">    3 root      20   0     0    0    0 S  0.3  0.0   0:07.18 ksoftirqd/0</span><br><span class="line">    1 root      20   0 19404  448  252 S  0.0  0.0   3:24.07 init</span><br><span class="line">    2 root      20   0     0    0    0 S  0.0  0.0   0:01.16 kthreadd</span><br><span class="line">    5 root       0 -20     0    0    0 S  0.0  0.0   0:00.00 kworker/0:0H</span><br><span class="line">    7 root      RT   0     0    0    0 S  0.0  0.0   2:15.90 migration/0</span><br></pre></td></tr></table></figure>
+<h5 id="2-3-2-进程占用资源排序"><a href="#2-3-2-进程占用资源排序" class="headerlink" title="2.3.2 进程占用资源排序"></a>2.3.2 进程占用资源排序</h5><ul>
+<li>在top基本视图中，按下大写的英文键“P”，进程会以占用CPU的使用率来排序</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND</span><br><span class="line">25273 root      20   0  427m  90m 2116 S  6.6  2.4 608:26.94 auto_outage_rep</span><br><span class="line">18041 rabbitmq  20   0 2274m  81m 1384 S  1.3  2.1  15785:02 beam.smp</span><br><span class="line"> 5641 tomcat    20   0 2328m 158m 2064 S  1.0  4.1 121:57.02 java</span><br><span class="line">10829 root      20   0  283m  40m 3012 S  1.0  1.1 197:31.87 change-web</span><br><span class="line"> 6622 root      20   0  633m 179m 3172 S  0.7  4.7  73:52.62 backyard-opstoo</span><br><span class="line"> 6560 root      20   0  341m 171m 1972 S  0.3  4.5 198:21.19 apptree-api</span><br><span class="line"> 6561 root      20   0  341m 171m 1972 S  0.3  4.5 202:30.45 apptree-api</span><br><span class="line"> 6564 root      20   0  341m 171m 1972 S  0.3  4.5 199:56.85 apptree-api</span><br></pre></td></tr></table></figure>
+<ul>
+<li>在top基本视图中，按下大写的英文键“M”，进程会以占用内存的使用率来排序</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND</span><br><span class="line"> 6597 root      20   0  635m 181m 3256 S  0.3  4.7  67:14.48 backyard-opstoo</span><br><span class="line"> 5641 tomcat    20   0 2328m 158m 2064 S  0.3  4.1 121:58.04 java</span><br><span class="line">18041 rabbitmq  20   0 2274m  82m 1384 S  1.0  2.1  15785:03 beam.smp</span><br><span class="line">14066 root      20   0  209m  47m 3152 S  0.0  1.2   1:41.97 outage-www</span><br><span class="line">14065 root      20   0  209m  46m 3120 S  0.0  1.2   1:43.36 outage-www</span><br><span class="line">27813 root      20   0  481m  43m 3000 S  0.0  1.1  64:16.05 python</span><br></pre></td></tr></table></figure>
+<ul>
+<li>在top基本视图中，按下大写的英文键“T”，进程会以运行时间来排序</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">18041 rabbitmq  20   0 2276m  82m 1384 S  0.7  2.2  15785:09 beam.smp</span><br><span class="line">28438 songkuan  20   0 20984 6204 1016 S  0.3  0.2   2027:51 serf</span><br><span class="line">11099 root      20   0  107m  12m 1128 S  0.0  0.3   1157:18 supervisord</span><br><span class="line">24514 root      20   0  789m 2312  608 S  0.0  0.1 983:24.72 collectd</span><br><span class="line">15907 root      20   0 14948  612  372 S  0.0  0.0 672:20.08 cgrulesengd</span><br><span class="line">25273 root      20   0  427m  90m 2116 S  7.3  2.4 609:27.98 auto_outage_rep</span><br><span class="line">27645 root      20   0  141m  24m  456 S  0.3  0.6 295:50.98 q-python27</span><br><span class="line"> 5641 tomcat    20   0 2328m 158m 2064 S  0.7  4.1 122:03.01 java</span><br></pre></td></tr></table></figure>
+<h5 id="2-3-3-显示指定的进程的详细信息-top-Hp-pid"><a href="#2-3-3-显示指定的进程的详细信息-top-Hp-pid" class="headerlink" title="2.3.3 显示指定的进程的详细信息  top -Hp [pid]"></a>2.3.3 显示指定的进程的详细信息  top -Hp [pid]</h5><p>top -Hp 5641:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND</span><br><span class="line">5702 tomcat    20   0 2328m 158m 2064 S  0.3  4.1  11:14.33 java</span><br><span class="line">5825 tomcat    20   0 2328m 158m 2064 S  0.3  4.1   1:17.93 java</span><br><span class="line">5848 tomcat    20   0 2328m 158m 2064 S  0.3  4.1  21:09.94 java</span><br><span class="line">5641 tomcat    20   0 2328m 158m 2064 S  0.0  4.1   0:00.01 java</span><br><span class="line">5654 tomcat    20   0 2328m 158m 2064 S  0.0  4.1   0:00.96 java</span><br><span class="line">5667 tomcat    20   0 2328m 158m 2064 S  0.0  4.1   0:13.93 java</span><br></pre></td></tr></table></figure>
+<h3 id="3、-JAVA虚拟机JSTACK命令"><a href="#3、-JAVA虚拟机JSTACK命令" class="headerlink" title="3、 JAVA虚拟机JSTACK命令"></a>3、 JAVA虚拟机JSTACK命令</h3><h4 id="3-1-过程演示"><a href="#3-1-过程演示" class="headerlink" title="3.1 过程演示"></a>3.1 过程演示</h4><p><strong><em>ps:由于问题已解决，因此占用CUP使用率达400%的java进程已不存在，并且考虑到保密问题，这里仅仅只是采用其他非核心机器演示一遍</em></strong>  </p>
+<ul>
+<li><p>通过上述第二节中介绍的top命令，定位到占用CPU使用率最高的进程，并记下进程id - 5641</p>
+</li>
+<li><p>使用top -Hp 5641 命令，查看该进程下各个线程的CUP使用情况；按下“P”键，找出占用CPU最高的pid - 5702</p>
+</li>
+<li><p>退出top，切换到tomcat用户 (su - tomcat)</p>
+</li>
+<li><p>使用jstack pid命令查看当前java进程的堆栈状态 - jstack 5641</p>
+</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">2019-09-12 17:54:58</span><br><span class="line">Full thread dump Java HotSpot(TM) 64-Bit Server VM (24.45-b08 mixed mode):</span><br><span class="line"></span><br><span class="line">"Attach Listener" daemon prio=10 tid=0x00007ff898001000 nid=0x336f waiting on condition [0x0000000000000000]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line"></span><br><span class="line">"nioEventLoopGroup-2-6" prio=10 tid=0x00007ff844023000 nid=0xd53 runnable [0x00007ff8b997e000]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line">	at sun.nio.ch.EPollArrayWrapper.epollWait(Native Method)</span><br><span class="line">	at sun.nio.ch.EPollArrayWrapper.poll(EPollArrayWrapper.java:269)</span><br><span class="line">	at sun.nio.ch.EPollSelectorImpl.doSelect(EPollSelectorImpl.java:79)</span><br><span class="line">	at sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:87)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb05e360</span>&gt;</span> (a io.netty.channel.nio.SelectedSelectionKeySet)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb05e3c0</span>&gt;</span> (a java.util.Collections$UnmodifiableSet)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb05e2c8</span>&gt;</span> (a sun.nio.ch.EPollSelectorImpl)</span><br><span class="line">	at sun.nio.ch.SelectorImpl.select(SelectorImpl.java:98)</span><br><span class="line">	at io.netty.channel.nio.NioEventLoop.select(NioEventLoop.java:622)</span><br><span class="line">	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:310)</span><br><span class="line">	at io.netty.util.concurrent.SingleThreadEventExecutor$2.run(SingleThreadEventExecutor.java:111)</span><br><span class="line">	at io.netty.util.concurrent.DefaultThreadFactory$DefaultRunnableDecorator.run(DefaultThreadFactory.java:137)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:744)</span><br><span class="line"></span><br><span class="line">"nioEventLoopGroup-2-5" prio=10 tid=0x00007ff844013800 nid=0xccb runnable [0x00007ff8b9a7f000]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line">	at sun.nio.ch.EPollArrayWrapper.epollWait(Native Method)</span><br><span class="line">	at sun.nio.ch.EPollArrayWrapper.poll(EPollArrayWrapper.java:269)</span><br><span class="line">	at sun.nio.ch.EPollSelectorImpl.doSelect(EPollSelectorImpl.java:79)</span><br><span class="line">	at sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:87)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb08b9b8</span>&gt;</span> (a io.netty.channel.nio.SelectedSelectionKeySet)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb08ca28</span>&gt;</span> (a java.util.Collections$UnmodifiableSet)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb08b920</span>&gt;</span> (a sun.nio.ch.EPollSelectorImpl)</span><br><span class="line">	at sun.nio.ch.SelectorImpl.select(SelectorImpl.java:98)</span><br><span class="line">	at io.netty.channel.nio.NioEventLoop.select(NioEventLoop.java:622)</span><br><span class="line">	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:310)</span><br><span class="line">	at io.netty.util.concurrent.SingleThreadEventExecutor$2.run(SingleThreadEventExecutor.java:111)</span><br><span class="line">	at io.netty.util.concurrent.DefaultThreadFactory$DefaultRunnableDecorator.run(DefaultThreadFactory.java:137)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:744)</span><br><span class="line"></span><br><span class="line">"nioEventLoopGroup-2-4" prio=10 tid=0x00007ff844021800 nid=0x991 runnable [0x00007ff8b9b80000]</span><br><span class="line">   java.lang.Thread.State: RUNNABLE</span><br><span class="line">	at sun.nio.ch.EPollArrayWrapper.epollWait(Native Method)</span><br><span class="line">	at sun.nio.ch.EPollArrayWrapper.poll(EPollArrayWrapper.java:269)</span><br><span class="line">	at sun.nio.ch.EPollSelectorImpl.doSelect(EPollSelectorImpl.java:79)</span><br><span class="line">	at sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:87)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb08d0d8</span>&gt;</span> (a io.netty.channel.nio.SelectedSelectionKeySet)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb08d138</span>&gt;</span> (a java.util.Collections$UnmodifiableSet)</span><br><span class="line">	- locked <span class="tag">&lt;<span class="name">0x00000000fb08d040</span>&gt;</span> (a sun.nio.ch.EPollSelectorImpl)</span><br><span class="line">	at sun.nio.ch.SelectorImpl.select(SelectorImpl.java:98)</span><br><span class="line">	at io.netty.channel.nio.NioEventLoop.select(NioEventLoop.java:622)</span><br><span class="line">	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:310)</span><br><span class="line">	at io.netty.util.concurrent.SingleThreadEventExecutor$2.run(SingleThreadEventExecutor.java:111)</span><br><span class="line">	at io.netty.util.concurrent.DefaultThreadFactory$DefaultRunnableDecorator.run(DefaultThreadFactory.java:137)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:744)</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>jstack命令生成的thread dump信息包含了JVM中所有存活的线程，为了分析指定的线程，此时在清楚线程id的情况下（5702），可以采用grep直接定位到指定线程； </p>
+</li>
+<li><p>由于jstack生成的thread dump中的线程采用的16进制，因此需要把 “5702” 换算成16进制，为 “1646”；  </p>
+</li>
+<li><p>执行命令： jstack 5641 | grep -A 10 1646</p>
+</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">"tailsource-pool-0" prio=10 tid=0x00007ff83c009000 nid=0x16d7 waiting on condition [0x00007ff8ba2d7000]</span><br><span class="line">   java.lang.Thread.State: TIMED_WAITING (parking)</span><br><span class="line">	at sun.misc.Unsafe.park(Native Method)</span><br><span class="line">	- parking to wait for  <span class="tag">&lt;<span class="name">0x00000000fb345630</span>&gt;</span> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)</span><br><span class="line">	at java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:226)</span><br><span class="line">	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:2082)</span><br><span class="line">	at java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:1090)</span><br><span class="line">	at java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:807)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1068)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)</span><br><span class="line">	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)</span><br></pre></td></tr></table></figure>
+<p><strong>通过以上步骤，最终定位到了具体的某个service服务，分析后得出具体原因为开发同学在条件判断时，将 &amp;&amp; 写成了 || ，从而造成了死循环</strong></p>
+<h4 id="3-2-通过jstack命令生成的thread-dump分析线程状态"><a href="#3-2-通过jstack命令生成的thread-dump分析线程状态" class="headerlink" title="3.2 通过jstack命令生成的thread dump分析线程状态"></a>3.2 通过jstack命令生成的thread dump分析线程状态</h4><p>除了上述的分析演示，大多数情况下会基于thread dump分析当前各个线程的运行情况，如是否存在死锁，是否存在一个线程长时间持有锁不放等等。  </p>
+<p>在dump中，线程一般存在如下几种状态：</p>
+<ul>
+<li>RUNNABLE ， 线程处于执行中</li>
+<li>BLOCKED ， 线程被阻塞</li>
+<li>WAITING ， 线程正在等待</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/09/11/用jstack分析线程状态/" data-id="ck0lsga0b0006321rax7ngkkt" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-幂等性的理解" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/07/15/幂等性的理解/" class="article-date">
@@ -130,7 +229,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/07/15/幂等性的理解/" data-id="cjy5v7av20002ad1rvtze8pqp" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/07/15/幂等性的理解/" data-id="ck0lsg9zu0002321rgftttio0" class="article-share-link">Share</a>
       
       
     </footer>
@@ -175,7 +274,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/07/02/springboot全局异常处理以及RequestBodyAdvice的小应用/" data-id="cjy5v7av40003ad1rndwa8qy6" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/07/02/springboot全局异常处理以及RequestBodyAdvice的小应用/" data-id="ck0lsg9zs0001321rvi68y0wf" class="article-share-link">Share</a>
       
       
     </footer>
@@ -236,7 +335,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/09/minio容器服务搭建及与springboot集成/" data-id="cjy5v7av00001ad1ryhmrxabm" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/05/09/minio容器服务搭建及与springboot集成/" data-id="ck0lsg9zw0003321r67jkm2jj" class="article-share-link">Share</a>
       
       
     </footer>
@@ -293,7 +392,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/16/activiti官方流程编辑器整合/" data-id="cjy5v7aut0000ad1rzi2ka7a2" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/04/16/activiti官方流程编辑器整合/" data-id="ck0lsg9zx0004321rhyjry6ec" class="article-share-link">Share</a>
       
       
     </footer>
@@ -349,7 +448,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/04/redis集群存储session/" data-id="cjy5v7av60004ad1r2abzjjc0" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/04/04/redis集群存储session/" data-id="ck0lsg9zm0000321rjh57q71k" class="article-share-link">Share</a>
       
       
     </footer>
@@ -388,7 +487,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/02/带logo二维码图片生成/" data-id="cjy5v7av70005ad1rg305f2ki" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/04/02/带logo二维码图片生成/" data-id="ck0lsg9zy0005321rwlh10u3l" class="article-share-link">Share</a>
       
       
     </footer>
@@ -416,7 +515,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">归档</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">七月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">九月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">七月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a></li></ul>
     </div>
   </div>
 
@@ -427,6 +526,10 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2019/09/11/用jstack分析线程状态/">用jstack分析线程状态</a>
+          </li>
         
           <li>
             <a href="/2019/07/15/幂等性的理解/">幂等性的理解</a>
@@ -442,10 +545,6 @@
         
           <li>
             <a href="/2019/04/16/activiti官方流程编辑器整合/">activiti官方流程编辑器整合</a>
-          </li>
-        
-          <li>
-            <a href="/2019/04/04/redis集群存储session/">redis集群存储session</a>
           </li>
         
       </ul>
