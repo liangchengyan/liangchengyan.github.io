@@ -66,6 +66,70 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-Python中SQLAlchemy使用简介" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/11/04/Python中SQLAlchemy使用简介/" class="article-date">
+  <time datetime="2019-11-04T09:53:39.000Z" itemprop="datePublished">2019-11-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/11/04/Python中SQLAlchemy使用简介/">Python中SQLAlchemy使用简介</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h3><p>ORM：Object Relation Mapping，描述程序中对象和数据库中数据记录之间的映射关系的统称，是运行程序和数据库之间数据持久化的一种编程思想。常规情况下，ORM主要有以下四个操作场景：增、删、改、查。<br>SQLAlchemy作为python中有名的ORM框架，在python项目中有着广泛的使用。</p>
+<h3 id="2、SQLAlchemy简介及操作"><a href="#2、SQLAlchemy简介及操作" class="headerlink" title="2、SQLAlchemy简介及操作"></a>2、SQLAlchemy简介及操作</h3><h4 id="2-1-安装"><a href="#2-1-安装" class="headerlink" title="2.1 安装"></a>2.1 安装</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install SQLAlchemy</span><br></pre></td></tr></table></figure>
+<h4 id="2-2-初始化连接"><a href="#2-2-初始化连接" class="headerlink" title="2.2 初始化连接"></a>2.2 初始化连接</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine</span><br><span class="line">engine = create_engine(<span class="string">'mysql://user:password@host:port/database'</span>, echo=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+<p>echo为True时，会显示每条执行的sql语句，为False时关闭；<br>create_engine()返回一个Engine的实例，是通过数据库语法处理细节的核心接口，在这种情况下，数据库语法将会被解释成python的类方法。</p>
+<p>方法参数解释说明：<br>mysql://user:password@host:port/database<br>mysql：指定连接数据库的种类，如mysql、postgresql等<br>user：数据库用户名<br>password： 数据库用户密码<br>host：数据库所在主机IP地址<br>port：数据库连接端口号<br>database：数据库名</p>
+<h4 id="2-3-创建数据库表格"><a href="#2-3-创建数据库表格" class="headerlink" title="2.3 创建数据库表格"></a>2.3 创建数据库表格</h4><h5 id="2-3-1-直接通过sql语句创建表格"><a href="#2-3-1-直接通过sql语句创建表格" class="headerlink" title="2.3.1 直接通过sql语句创建表格"></a>2.3.1 直接通过sql语句创建表格</h5><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.orm <span class="keyword">import</span> sessionmaker</span><br><span class="line"></span><br><span class="line">sql = <span class="string">'''create table employee(</span></span><br><span class="line"><span class="string">    id int not null primary key,</span></span><br><span class="line"><span class="string">    name varchar(50),</span></span><br><span class="line"><span class="string">    age int,</span></span><br><span class="line"><span class="string">    address varchar(100));</span></span><br><span class="line"><span class="string">'''</span></span><br><span class="line">engine = create_engine(<span class="string">'mysql://user:password@host:port/database'</span>,echo=<span class="literal">True</span>)</span><br><span class="line">conn = engine.connect()</span><br><span class="line">conn.execute(sql)</span><br><span class="line">engine.connect()</span><br></pre></td></tr></table></figure>
+<h5 id="2-3-2-通过ORM方式创建表格"><a href="#2-3-2-通过ORM方式创建表格" class="headerlink" title="2.3.2 通过ORM方式创建表格"></a>2.3.2 通过ORM方式创建表格</h5><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine, MetaData, Table, Column, Integer, String</span><br><span class="line"></span><br><span class="line">engine = create_engine(<span class="string">'mysql://user:password@host:port/database'</span>)</span><br><span class="line"><span class="comment"># 绑定一个数据源的metadata</span></span><br><span class="line">metadata = MetaData(engine)</span><br><span class="line"><span class="comment"># 表结构</span></span><br><span class="line">employee = Table(<span class="string">'employee'</span>, metadata,</span><br><span class="line">                 Column(<span class="string">'id'</span>, Integer, primary_key=<span class="literal">True</span>),</span><br><span class="line">                 Column(<span class="string">'name'</span>, String(<span class="number">50</span>)),</span><br><span class="line">                 Column(<span class="string">'age'</span>, Integer),</span><br><span class="line">                 Column(<span class="string">'address'</span>, String(<span class="number">10</span>)),</span><br><span class="line">                 )</span><br><span class="line"><span class="comment"># 创建表，会首先判断表是否存在                 </span></span><br><span class="line">metadata.create_all(engine)</span><br></pre></td></tr></table></figure>
+<h4 id="2-4-Table类"><a href="#2-4-Table类" class="headerlink" title="2.4 Table类"></a>2.4 Table类</h4><p>构造函数：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Table.__init__(self, name, metadata, *args, **kwargs)</span><br></pre></td></tr></table></figure></p>
+<p>name: 表名<br>metadata: 共享的元数据<br>*args: Column 列定义  </p>
+<p>以下为可变参数 **kwargs 定义<br>schema: 此表的结构名称，默认None<br>autoload: 自动从现有表中读入表结构，默认False<br>autoload_with: 从其他engine读取结构，默认None<br>include_columns: 如果autoload设置为True，则此项数组中的列明将被引用，没有写的列明将被忽略，None表示所有都列明都引用，默认None<br>mustexist: 如果为True，表示这个表必须在其他的python应用中定义，必须是metadata的一部分，默认False<br>useexisting: 如果为True，表示这个表必须被其他应用定义过，将忽略结构定义，默认False<br>owner: 表所有者，用于Orcal，默认None<br>quote: 设置为True，如果表名是SQL关键字，将强制转义，默认False<br>quote_schema: 设置为True，如果列明是SQL关键字，将强制转义，默认False<br>mysql_engine: mysql专用，可以设置’InnoDB’或’MyISAM’  </p>
+<h4 id="2-5-Column类"><a href="#2-5-Column类" class="headerlink" title="2.5 Column类"></a>2.5 Column类</h4><p>构造函数:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Column.__init__(self, name, type_, *args, **kwargs)</span><br></pre></td></tr></table></figure></p>
+<p>name: 列名<br>type_: 类型,更多类型见sqlalchemy.types<br>*args Constraint(约束), ForeignKey(外键), ColumnDefault(默认) 等  </p>
+<p>以下为可变参数 **kwargs 定义<br>primary_key: 如果为True，则是主键<br>nullable: 是否可为Null，默认是True<br>default: 默认值，默认是None<br>index: 是否是索引，默认是True<br>unique: 是否唯一键，默认是False<br>onupdate: 指定一个更新时候的值，这个操作是定义在SQLAlchemy中，不是在数据库里的，当更新一条数据时设置，大部分用于updateTime这类字段<br>autoincrement: 设置为整型自动增长，只有没有默认值，并且是Integer类型，默认是True<br>quote: 如果列名是关键字，则强制转义，默认False</p>
+<h4 id="2-6-创建会话session"><a href="#2-6-创建会话session" class="headerlink" title="2.6 创建会话session"></a>2.6 创建会话session</h4><p>session的主要目的便是建立与数据库的会话，维护程序加载和关联的所有数据库对象，也是对数据库实现增、删、改、查的入口  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine</span><br><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> sessionmaker</span><br><span class="line"></span><br><span class="line">engine = create_engine(<span class="string">'mysql://user:password@host:port/database'</span>)</span><br><span class="line">DBSession = sessionmaker(bind=engine, autocommit=<span class="literal">True</span>)</span><br><span class="line">session = DBSession()</span><br></pre></td></tr></table></figure>
+<p>通过sessionmaker方法创建一个session工厂，然后再调用工厂的方法来实例化一个session对象  </p>
+<h4 id="2-7-添加数据"><a href="#2-7-添加数据" class="headerlink" title="2.7 添加数据"></a>2.7 添加数据</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine, Column, Integer, String</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.ext.declarative <span class="keyword">import</span> declarative_base</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.orm <span class="keyword">import</span> sessionmaker</span><br><span class="line"></span><br><span class="line">engine = create_engine(<span class="string">'mysql://user:password@host:port/database'</span>)</span><br><span class="line">DBSession = sessionmaker(bind=engine, autocommit=<span class="literal">True</span>)</span><br><span class="line">session = DBSession()</span><br><span class="line"></span><br><span class="line">ModelBase = declarative_base()</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Employee</span><span class="params">(ModelBase)</span>:</span></span><br><span class="line">    __tablename__ = <span class="string">'employee'</span></span><br><span class="line">    id = Column(Integer, primary_key=<span class="literal">True</span>)</span><br><span class="line">    name = Column(String(<span class="number">100</span>))</span><br><span class="line">    age = Column(Integer)</span><br><span class="line">    address = Column(String(<span class="number">100</span>))</span><br><span class="line"></span><br><span class="line">employee_1 = Employee(id=<span class="number">1</span>, name=<span class="string">'liang'</span>, age=<span class="number">26</span>, address=<span class="string">"beijing"</span>)</span><br><span class="line">employee_2 = Employee(id=<span class="number">2</span>, name=<span class="string">'feng'</span>, age=<span class="number">27</span>, address=<span class="string">"chongqing"</span>)</span><br><span class="line"></span><br><span class="line">session.add_all([employee_1, employee_2])</span><br><span class="line">session.commit()</span><br><span class="line">session.close()</span><br></pre></td></tr></table></figure>
+<h4 id="2-8-查询Query"><a href="#2-8-查询Query" class="headerlink" title="2.8 查询Query"></a>2.8 查询Query</h4><p>通过session的query()方法创建一个查询对象  </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine, Column, Integer, String</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.ext.declarative <span class="keyword">import</span> declarative_base</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.orm <span class="keyword">import</span> sessionmaker</span><br><span class="line"></span><br><span class="line">ModelBase = declarative_base()</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Employee</span><span class="params">(ModelBase)</span>:</span></span><br><span class="line">    __tablename__ = <span class="string">'employee'</span></span><br><span class="line">    id = Column(Integer, primary_key=<span class="literal">True</span>)</span><br><span class="line">    name = Column(String(<span class="number">100</span>))</span><br><span class="line">    age = Column(Integer)</span><br><span class="line">    address = Column(String(<span class="number">100</span>))</span><br><span class="line">    </span><br><span class="line">engine = create_engine(<span class="string">'mysql://user:password@host:port/database'</span>)</span><br><span class="line">DBSession = sessionmaker(bind=engine, autocommit=<span class="literal">True</span>)</span><br><span class="line">session = DBSession()</span><br><span class="line"></span><br><span class="line"><span class="comment"># filter_by()过滤表的条件</span></span><br><span class="line">my_employee_1 = session.query(Employee).filter_by(name=<span class="string">'liang'</span>).first()</span><br><span class="line">print(my_employee_1)</span><br><span class="line">print(my_employee_1.id, my_employee_1.name, my_employee_1.age, my_employee_1.address)</span><br><span class="line"></span><br><span class="line"><span class="comment"># filter()过滤表的条件</span></span><br><span class="line">my_employee_2 = session.query(Employee).filter(Employee.name == <span class="string">'liang'</span>).first()</span><br><span class="line">print(my_employee_2)</span><br><span class="line">print(my_employee_2.id, my_employee_2.name, my_employee_2.age, my_employee_2.address)</span><br><span class="line"></span><br><span class="line">my_employees = session.query(Employee).filter(Employee.name.like(<span class="string">'%liang%'</span>)).all()</span><br><span class="line">print(my_employees)</span><br><span class="line">print(typeof(my_employees))</span><br></pre></td></tr></table></figure>
+<p><strong>filter() 和 filter_by():</strong><br>filter() 引用列名时，需要通过 类名.属性名 的方式，<strong>filter()不支持组合查询，需要连续调用filter()来实现</strong>  <strong>实际开发中较常用</strong><br>filter_by() 可以使用python正常参数传递方法传递条件，不需要额外指定类名，支持组合查询  </p>
+<p><strong>.all() 和 .first()</strong><br>all(): 返回一个列表<br>first(): 返回至多一个结果，以单项的形式</p>
+<h4 id="2-9-更新"><a href="#2-9-更新" class="headerlink" title="2.9 更新"></a>2.9 更新</h4><p>将数据查询出来，然后更新</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine, Column, Integer, String</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.ext.declarative <span class="keyword">import</span> declarative_base</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.orm <span class="keyword">import</span> sessionmaker</span><br><span class="line"></span><br><span class="line">ModelBase = declarative_base()</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Employee</span><span class="params">(ModelBase)</span>:</span></span><br><span class="line">    __tablename__ = <span class="string">'employee'</span></span><br><span class="line">    id = Column(Integer, primary_key=<span class="literal">True</span>)</span><br><span class="line">    name = Column(String(<span class="number">100</span>))</span><br><span class="line">    age = Column(Integer)</span><br><span class="line">    address = Column(String(<span class="number">100</span>))</span><br><span class="line">    </span><br><span class="line">engine = create_engine(<span class="string">'mysql://user:password@host:port/database'</span>)</span><br><span class="line">DBSession = sessionmaker(bind=engine, autocommit=<span class="literal">True</span>)</span><br><span class="line">session = DBSession()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查询</span></span><br><span class="line">my_employee = session.query(Employee).filter(Employee.name == <span class="string">'liang'</span>).first()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 普通更新</span></span><br><span class="line">my_employee.age = <span class="number">29</span></span><br><span class="line">my_employee.address = <span class="string">'beijinghaidian'</span></span><br><span class="line">session.commit()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用merge()更新</span></span><br><span class="line">my_employee.age = <span class="number">29</span></span><br><span class="line">my_employee.address = <span class="string">'beijinghaidian'</span></span><br><span class="line">session.merge(my_employee)</span><br><span class="line">session.commit()</span><br></pre></td></tr></table></figure>
+<h4 id="2-10-删除"><a href="#2-10-删除" class="headerlink" title="2.10 删除"></a>2.10 删除</h4><p>删除也与查询有关，直接查询出来，调用delete()方法删除<br><strong>在实际开发中，一般使用逻辑删除(更新数据状态)，很少使用物理删除</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">my_employee = session.query(Employee).filter(Employee.name == <span class="string">'liang'</span>).first()</span><br><span class="line">session.delete(my_employee)</span><br><span class="line">session.commit()</span><br></pre></td></tr></table></figure>
+<h4 id="2-11-统计、分组、排序、关联查询"><a href="#2-11-统计、分组、排序、关联查询" class="headerlink" title="2.11 统计、分组、排序、关联查询"></a>2.11 统计、分组、排序、关联查询</h4><h5 id="统计-count"><a href="#统计-count" class="headerlink" title="统计 count()"></a>统计 count()</h5><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">count = session.query(Employee).filter(Employee.name.like(<span class="string">'%liang%'</span>)).count()</span><br><span class="line">print(count)</span><br></pre></td></tr></table></figure>
+<h4 id="分组-group-by-多和统计函数一起使用，如count-计数-、sum-求和-、avg-平均"><a href="#分组-group-by-多和统计函数一起使用，如count-计数-、sum-求和-、avg-平均" class="headerlink" title="分组 group_by() - 多和统计函数一起使用，如count (计数)、sum (求和)、avg (平均)"></a>分组 group_by() - 多和统计函数一起使用，如count (计数)、sum (求和)、avg (平均)</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">emp_group_by = session.query(Employee).group_by(Employee.age)</span><br></pre></td></tr></table></figure>
+<h4 id="排序-order-by"><a href="#排序-order-by" class="headerlink" title="排序 order_by()"></a>排序 order_by()</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">my_employees_id_desc = session.query(Employee).filter(Employee.name.like(<span class="string">'%liang%'</span>)).order_by(Employee.id.desc()).all</span><br><span class="line">print(my_employees_id_desc)</span><br></pre></td></tr></table></figure>
+<h4 id="关联查询-join"><a href="#关联查询-join" class="headerlink" title="关联查询 join()"></a>关联查询 join()</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine, Column, Integer, String</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.ext.declarative <span class="keyword">import</span> declarative_base</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.orm <span class="keyword">import</span> sessionmaker</span><br><span class="line"></span><br><span class="line">ModelBase = declarative_base()</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span><span class="params">(ModelBase)</span>:</span></span><br><span class="line">    __tablename__ = <span class="string">'users'</span></span><br><span class="line">    id = Column(Integer, primary_key=<span class="literal">True</span>)</span><br><span class="line">    name = Column(String(<span class="number">50</span>))</span><br><span class="line">    fullname = Column(String(<span class="number">50</span>))</span><br><span class="line">    password = Column(String(<span class="number">12</span>))</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Address</span><span class="params">(ModelBase)</span>:</span></span><br><span class="line">    __tablename__ = <span class="string">'addresses'</span></span><br><span class="line">    id = Column(Integer, primary_key=<span class="literal">True</span>)</span><br><span class="line">    email_address = Column(String, nullable=<span class="literal">False</span>)</span><br><span class="line">    user_id = Column(Integer)</span><br><span class="line">    </span><br><span class="line">engine = create_engine(<span class="string">'mysql://user:password@host:port/database'</span>)</span><br><span class="line">DBSession = sessionmaker(bind=engine, autocommit=<span class="literal">True</span>)</span><br><span class="line">session = DBSession()</span><br><span class="line"></span><br><span class="line">result = session.query(User).join(Address, User.id==Address.user_id).filter(Address.email_address == <span class="string">'liang@163.com'</span>).all()</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/11/04/Python中SQLAlchemy使用简介/" data-id="ck2l892b20006ia1rkyow1l1r" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-用jstack分析线程状态" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/09/11/用jstack分析线程状态/" class="article-date">
@@ -155,7 +219,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/09/11/用jstack分析线程状态/" data-id="ck0lsga0b0006321rax7ngkkt" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/09/11/用jstack分析线程状态/" data-id="ck2l892b30007ia1r1u7l8whc" class="article-share-link">Share</a>
       
       
     </footer>
@@ -229,7 +293,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/07/15/幂等性的理解/" data-id="ck0lsg9zu0002321rgftttio0" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/07/15/幂等性的理解/" data-id="ck2l892ar0005ia1rk4q897xo" class="article-share-link">Share</a>
       
       
     </footer>
@@ -274,7 +338,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/07/02/springboot全局异常处理以及RequestBodyAdvice的小应用/" data-id="ck0lsg9zs0001321rvi68y0wf" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/07/02/springboot全局异常处理以及RequestBodyAdvice的小应用/" data-id="ck2l892ao0003ia1rrecpupbv" class="article-share-link">Share</a>
       
       
     </footer>
@@ -335,7 +399,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/09/minio容器服务搭建及与springboot集成/" data-id="ck0lsg9zw0003321r67jkm2jj" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/05/09/minio容器服务搭建及与springboot集成/" data-id="ck2l892am0002ia1ryeic2qzk" class="article-share-link">Share</a>
       
       
     </footer>
@@ -392,7 +456,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/16/activiti官方流程编辑器整合/" data-id="ck0lsg9zx0004321rhyjry6ec" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/04/16/activiti官方流程编辑器整合/" data-id="ck2l892ab0000ia1rherzvkik" class="article-share-link">Share</a>
       
       
     </footer>
@@ -448,7 +512,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/04/redis集群存储session/" data-id="ck0lsg9zm0000321rjh57q71k" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/04/04/redis集群存储session/" data-id="ck2l892aj0001ia1rskaxocri" class="article-share-link">Share</a>
       
       
     </footer>
@@ -487,7 +551,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/02/带logo二维码图片生成/" data-id="ck0lsg9zy0005321rwlh10u3l" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2019/04/02/带logo二维码图片生成/" data-id="ck2l892ap0004ia1r5s6qplyr" class="article-share-link">Share</a>
       
       
     </footer>
@@ -515,7 +579,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">归档</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">九月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">七月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">九月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">七月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">四月 2019</a></li></ul>
     </div>
   </div>
 
@@ -526,6 +590,10 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2019/11/04/Python中SQLAlchemy使用简介/">Python中SQLAlchemy使用简介</a>
+          </li>
         
           <li>
             <a href="/2019/09/11/用jstack分析线程状态/">用jstack分析线程状态</a>
@@ -541,10 +609,6 @@
         
           <li>
             <a href="/2019/05/09/minio容器服务搭建及与springboot集成/">minio容器服务搭建及与springboot集成</a>
-          </li>
-        
-          <li>
-            <a href="/2019/04/16/activiti官方流程编辑器整合/">activiti官方流程编辑器整合</a>
           </li>
         
       </ul>
